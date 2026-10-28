@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2進数⇔10進数 スピードクイズ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+<div class="max-w-2xl mx-auto p-4">
+  <h1 class="text-3xl font-bold text-center mb-2 text-blue-300">🔢 2進数⇔10進数 クイズ</h1>
+  <p class="text-center text-gray-400 mb-6 text-sm">BINARY ↔ DECIMAL SPEED QUIZ</p>
+
+  <!-- Setup -->
+  <div id="setupScreen" class="bg-gray-800 rounded-xl p-6 mb-4">
+    <div class="grid grid-cols-1 gap-4 mb-6">
+      <div>
+        <label class="block text-sm mb-2 text-gray-300">変換モード</label>
+        <div class="flex gap-2">
+          <button data-mode="bin2dec" aria-label="2進数から10進数モード"
+            class="mode-btn flex-1 py-3 rounded-lg border-2 border-blue-500 bg-blue-900 font-bold">
+            2進数 → 10進数
+          </button>
+          <button data-mode="dec2bin" aria-label="10進数から2進数モード"
+            class="mode-btn flex-1 py-3 rounded-lg border-2 border-gray-600 bg-gray-700 font-bold">
+            10進数 → 2進数
+          </button>
+          <button data-mode="mixed" aria-label="ミックスモード"
+            class="mode-btn flex-1 py-3 rounded-lg border-2 border-gray-600 bg-gray-700 font-bold">
+            ミックス
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm mb-2 text-gray-300">難易度</label>
+        <div class="flex gap-2">
+          <button data-bits="4" aria-label="4ビット難易度"
+            class="bits-btn flex-1 py-2 rounded-lg border-2 border-green-500 bg-green-900 font-bold text-sm">
+            4bit (0-15)
+          </button>
+          <button data-bits="8" aria-label="8ビット難易度"
+            class="bits-btn flex-1 py-2 rounded-lg border-2 border-gray-600 bg-gray-700 font-bold text-sm">
+            8bit (0-255)
+          </button>
+          <button data-bits="16" aria-label="16ビット難易度"
+            class="bits-btn flex-1 py-2 rounded-lg border-2 border-gray-600 bg-gray-700 font-bold text-sm">
+            16bit (0-65535)
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm mb-2 text-gray-300">ゲームモード</label>
+        <div class="flex gap-2">
+          <button data-gmode="endless" aria-label="無限モード"
+            class="gmode-btn flex-1 py-2 rounded-lg border-2 border-purple-500 bg-purple-900 font-bold text-sm">
+            無限
+          </button>
+          <button data-gmode="timed" aria-label="タイムアタックモード"
+            class="gmode-btn flex-1 py-2 rounded-lg border-2 border-gray-600 bg-gray-700 font-bold text-sm">
+            タイムアタック 60秒
+          </button>
+        </div>
+      </div>
+    </div>
+    <button id="startBtn" aria-label="ゲームを開始" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-lg transition">
+      スタート
+    </button>
+  </div>
+
+  <!-- Game -->
+  <div id="gameScreen" class="hidden">
+    <div class="flex justify-between items-center mb-4">
+      <div class="text-sm">スコア: <span id="scoreDisp" class="text-yellow-400 font-bold text-xl">0</span></div>
+      <div id="timerBox" class="hidden text-sm">⏱ <span id="timerDisp" class="text-red-400 font-bold text-xl">60</span>秒</div>
+      <div class="text-sm">ストリーク: <span id="streakDisp" class="text-green-400 font-bold text-xl">0</span>🔥</div>
+    </div>
+
+    <div class="bg-gray-800 rounded-xl p-6 mb-4 text-center">
+      <div class="text-xs text-gray-400 mb-2" id="questionType"></div>
+      <div id="questionText" class="text-3xl font-bold font-mono text-cyan-300 mb-2 break-all"></div>
+      <div class="text-xs text-gray-500" id="questionHint"></div>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-sm mb-2 text-gray-300" for="answerInput">答えを入力:</label>
+      <input type="text" id="answerInput" aria-label="答えを入力"
+        class="w-full bg-gray-800 border-2 border-gray-600 focus:border-blue-400 rounded-xl p-4 text-2xl font-mono text-center focus:outline-none"
+        placeholder="ここに入力">
+    </div>
+
+    <button id="submitBtn" aria-label="解答する" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-lg transition mb-4">
+      解答 →
+    </button>
+
+    <div id="feedback" class="hidden rounded-xl p-4 mb-4">
+      <div id="feedbackMain" class="font-bold text-lg"></div>
+      <div id="feedbackDetail" class="text-sm mt-2"></div>
+    </div>
+
+    <div class="text-center mt-4">
+      <span class="text-xs text-gray-500">最高ストリーク: <span id="bestStreakDisp" class="text-yellow-400">0</span></span>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="resultScreen" class="hidden bg-gray-800 rounded-xl p-6 text-center">
+    <div class="text-4xl mb-3">🏆</div>
+    <h2 class="text-2xl font-bold text-blue-300 mb-2">タイムアップ！</h2>
+    <div id="finalScore" class="text-5xl font-bold text-yellow-400 mb-2"></div>
+    <div id="resultDetail" class="text-gray-400 mb-2"></div>
+    <div class="text-sm text-gray-500 mb-6">最高スコア: <span id="bestScore" class="text-yellow-300 font-bold"></span></div>
+    <button id="restartBtn" aria-label="もう一度プレイ" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition">
+      もう一度
+    </button>
+  </div>
+</div>
+
+<script>
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+let cfg = { mode: 'bin2dec', bits: 4, gmode: 'endless' };
+let st = { score: 0, streak: 0, bestStreak: 0, correct: 0, total: 0, timeLeft: 60, timerInterval: null, currentNum: 0, questionMode: '' };
+
+// Button group logic
+function setupBtnGroup(selector, keyName) {
+  document.querySelectorAll(selector).forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll(selector).forEach(b => {
+        b.className = b.className.replace(/border-(blue|green|purple)-500 bg-(blue|green|purple)-900/, 'border-gray-600 bg-gray-700');
+      });
+      const colorMap = { 'mode-btn': 'blue', 'bits-btn': 'green', 'gmode-btn': 'purple' };
+      const cls = btn.className.split(' ')[0];
+      const color = colorMap[cls] || 'blue';
+      btn.className = btn.className.replace('border-gray-600 bg-gray-700', `border-${color}-500 bg-${color}-900`);
+      cfg[keyName] = btn.dataset[keyName === 'mode' ? 'mode' : keyName === 'bits' ? 'bits' : 'gmode'];
+    });
+  });
+}
+setupBtnGroup('.mode-btn', 'mode');
+setupBtnGroup('.bits-btn', 'bits');
+setupBtnGroup('.gmode-btn', 'gmode');
+
+function generateQuestion() {
+  const max = cfg.bits == 4 ? 15 : cfg.bits == 8 ? 255 : 65535;
+  st.currentNum = Math.floor(Math.random() * (max + 1));
+
+  let qMode = cfg.mode;
+  if (qMode === 'mixed') qMode = Math.random() < 0.5 ? 'bin2dec' : 'dec2bin';
+  st.questionMode = qMode;
+
+  const qt = document.getElementById('questionType');
+  const qText = document.getElementById('questionText');
+  const qHint = document.getElementById('questionHint');
+
+  if (qMode === 'bin2dec') {
+    const binStr = st.currentNum.toString(2).padStart(parseInt(cfg.bits), '0');
+    qt.textContent = '2進数 → 10進数に変換してください';
+    qText.textContent = binStr;
+    qHint.textContent = `${cfg.bits}ビット`;
+  } else {
+    qt.textContent = '10進数 → 2進数に変換してください';
+    qText.textContent = st.currentNum;
+    qHint.textContent = `${cfg.bits}ビットで表現`;
+  }
+
+  document.getElementById('answerInput').value = '';
+  document.getElementById('feedback').classList.add('hidden');
+  document.getElementById('answerInput').focus();
+}
+
+function makeExplanation(num) {
+  const binStr = num.toString(2).padStart(parseInt(cfg.bits), '0');
+  let lines = [`${num} = `];
+  let parts = [];
+  for (let i = 0; i < binStr.length; i++) {
+    if (binStr[i] === '1') {
+      parts.push(`2^${binStr.length - 1 - i}(=${Math.pow(2, binStr.length - 1 - i)})`);
+    }
+  }
+  return `${num} = ${binStr}（${parts.join(' + ')}）`;
+}
+
+function checkAnswer() {
+  const raw = document.getElementById('answerInput').value.trim();
+  const fb = document.getElementById('feedback');
+  const fbMain = document.getElementById('feedbackMain');
+  const fbDetail = document.getElementById('feedbackDetail');
+  fb.classList.remove('hidden');
+  st.total++;
+
+  let correct = false;
+  if (st.questionMode === 'bin2dec') {
+    correct = parseInt(raw, 10) === st.currentNum;
+  } else {
+    const userBin = raw.replace(/\s/g, '');
+    const expectedBin = st.currentNum.toString(2);
+    const paddedExpected = st.currentNum.toString(2).padStart(parseInt(cfg.bits), '0');
+    correct = userBin === expectedBin || userBin === paddedExpected;
+  }
+
+  if (correct) {
+    st.streak++;
+    st.score += 10 + Math.min(st.streak * 2, 20);
+    st.correct++;
+    if (st.streak > st.bestStreak) st.bestStreak = st.streak;
+    fb.className = 'bg-green-900 border border-green-500 rounded-xl p-4 mb-4';
+    fbMain.className = 'font-bold text-lg text-green-300';
+    fbMain.textContent = '✔ 正解！ +' + (10 + Math.min(st.streak * 2, 20)) + '点';
+    fbDetail.textContent = makeExplanation(st.currentNum);
+    document.getElementById('scoreDisp').textContent = st.score;
+    document.getElementById('streakDisp').textContent = st.streak;
+    document.getElementById('bestStreakDisp').textContent = st.bestStreak;
+    setTimeout(() => { if (cfg.gmode !== 'timed' || st.timeLeft > 0) generateQuestion(); }, 1200);
+  } else {
+    st.streak = 0;
+    fb.className = 'bg-red-900 border border-red-500 rounded-xl p-4 mb-4';
+    fbMain.className = 'font-bold text-lg text-red-300';
+    fbMain.textContent = '✗ 不正解';
+    const correctAns = st.questionMode === 'bin2dec' ? st.currentNum : st.currentNum.toString(2).padStart(parseInt(cfg.bits), '0');
+    fbDetail.innerHTML = `正解: <span class="font-mono font-bold text-yellow-300">${escapeHtml(String(correctAns))}</span><br><span class="text-xs">${escapeHtml(makeExplanation(st.currentNum))}</span>`;
+    document.getElementById('streakDisp').textContent = 0;
+  }
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  st = { score: 0, streak: 0, bestStreak: 0, correct: 0, total: 0, timeLeft: 60, timerInterval: null, currentNum: 0, questionMode: '' };
+  document.getElementById('scoreDisp').textContent = 0;
+  document.getElementById('streakDisp').textContent = 0;
+  document.getElementById('bestStreakDisp').textContent = 0;
+  document.getElementById('setupScreen').classList.add('hidden');
+  document.getElementById('resultScreen').classList.add('hidden');
+  document.getElementById('gameScreen').classList.remove('hidden');
+  document.getElementById('timerBox').classList.add('hidden');
+
+  if (cfg.gmode === 'timed') {
+    document.getElementById('timerBox').classList.remove('hidden');
+    st.timerInterval = setInterval(() => {
+      st.timeLeft--;
+      document.getElementById('timerDisp').textContent = st.timeLeft;
+      if (st.timeLeft <= 0) {
+        clearInterval(st.timerInterval);
+        endGame();
+      }
+    }, 1000);
+  }
+  generateQuestion();
+});
+
+function endGame() {
+  document.getElementById('gameScreen').classList.add('hidden');
+  document.getElementById('resultScreen').classList.remove('hidden');
+  document.getElementById('finalScore').textContent = st.score + '点';
+  document.getElementById('resultDetail').textContent = `${st.total}問中 ${st.correct}問正解 / 最高ストリーク: ${st.bestStreak}`;
+  const best = parseInt(localStorage.getItem('bin_best') || '0');
+  if (st.score > best) localStorage.setItem('bin_best', st.score);
+  document.getElementById('bestScore').textContent = Math.max(best, st.score) + '点';
+}
+
+document.getElementById('submitBtn').addEventListener('click', checkAnswer);
+document.getElementById('answerInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
+document.getElementById('restartBtn').addEventListener('click', () => {
+  clearInterval(st.timerInterval);
+  document.getElementById('resultScreen').classList.add('hidden');
+  document.getElementById('setupScreen').classList.remove('hidden');
+});
+</script>
+</body>
+</html>
